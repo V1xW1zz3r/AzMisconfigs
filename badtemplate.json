@@ -1,0 +1,603 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmName": {
+            "defaultValue": "LinuxVM",
+            "type": "String",
+            "metadata": {
+                "description": "The name of you Virtual Machine."
+            }
+        },
+        "adminUsername": {
+            "defaultValue": "linuxadmin",
+            "type": "String",
+            "metadata": {
+                "description": "Username for the Virtual Machine."
+            }
+        },
+        "authenticationType": {
+            "defaultValue": "password",
+            "allowedValues": [
+                "sshPublicKey",
+                "password"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "Type of authentication to use on the Virtual Machine. SSH key is recommended."
+            }
+        },
+        "adminPasswordOrKey": {
+            "defaultValue": "A6KWsY5KWgA6KWsY5KWg",
+            "type": "String",
+            "metadata": {
+                "description": "SSH Key or password for the Virtual Machine. SSH key is recommended."
+            }
+        },
+        "dnsLabelPrefix": {
+            "defaultValue": "[toLower(concat('linuxvm-', uniqueString(resourceGroup().id)))]",
+            "type": "String",
+            "metadata": {
+                "description": "Unique DNS Name for the Public IP used to access the Virtual Machine."
+            }
+        },
+        "ubuntuOSVersion": {
+            "defaultValue": "18.04-LTS",
+            "allowedValues": [
+                "12.04.5-LTS",
+                "14.04.5-LTS",
+                "16.04.0-LTS",
+                "18.04-LTS"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "The Ubuntu version for the VM. This will pick a fully patched image of this given Ubuntu version."
+            }
+        },
+        "location": {
+            "defaultValue": "[resourceGroup().location]",
+            "type": "String",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        },
+        "VmSize": {
+            "defaultValue": "Standard_B2ls_v2",
+            "type": "String",
+            "metadata": {
+                "description": "The size of the VM"
+            }
+        },
+        "virtualNetworkName": {
+            "defaultValue": "vNet",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the VNET"
+            }
+        },
+        "subnetName": {
+            "defaultValue": "Subnet",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the subnet in the virtual network"
+            }
+        },
+        "networkSecurityGroupName": {
+            "defaultValue": "SecGroupNet",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the Network Security Group"
+            }
+        },
+        "accountName": {
+            "defaultValue": "automation-acct",
+            "type": "String"
+        },
+        "_artifactsLocation": {
+            "defaultValue": "https://raw.githubusercontent.com/PacktPublishing/Penetration-Testing-Azure-for-Ethical-Hackers/main/chapter-4/resources/",
+            "type": "String",
+            "metadata": {
+                "description": "URI to artifacts location"
+            }
+        },
+        "_artifactsLocationSasToken": {
+            "defaultValue": "",
+            "type": "SecureString",
+            "metadata": {
+                "description": "The sasToken required to access _artifactsLocation.  When the template is deployed using the accompanying scripts, a sasToken will be automatically generated"
+            }
+        },
+        "sampleGraphicalRunbookName": {
+            "defaultValue": "AzureAutomationGraphicalRunbook",
+            "type": "String"
+        },
+        "sampleGraphicalRunbookDescription": {
+            "defaultValue": "An example runbook that gets all the Resource Manager resources by using the Run As account (service principal).",
+            "type": "String"
+        },
+        "samplePowerShellRunbookName": {
+            "defaultValue": "AzureAutomationPSScript",
+            "type": "String"
+        },
+        "samplePowerShellRunbookDescription": {
+            "defaultValue": "An example runbook that gets all the Resource Manager resources by using the Run As account (service principal).",
+            "type": "String"
+        },
+        "samplePython2RunbookName": {
+            "defaultValue": "AzureAutomationPython2",
+            "type": "String"
+        },
+        "samplePython2RunbookDescription": {
+            "defaultValue": "An example runbook that gets all the Resource Manager resources by using the Run As account (service principal).",
+            "type": "String"
+        },
+        "webappname": {
+            "defaultValue": "[concat('webapp-', uniqueString(resourceGroup().id))]",
+            "type": "String"
+        },
+        "administratorLogin": {
+            "defaultValue": "mysqladmin",
+            "type": "String"
+        },
+        "administratorLoginPassword": {
+            "defaultValue": "2Jja2gt59NUA689q",
+            "type": "SecureString"
+        },
+        "workerSize": {
+            "defaultValue": "1",
+            "type": "String"
+        },
+        "dbSkucapacity": {
+            "defaultValue": 2,
+            "allowedValues": [
+                2,
+                4,
+                8,
+                16,
+                32
+            ],
+            "type": "Int",
+            "metadata": {
+                "description": "Azure database for mySQL compute capacity in vCores (2,4,8,16,32)"
+            }
+        },
+        "dbSkuName": {
+            "defaultValue": "Standard_B2s",
+            "allowedValues": [
+                "Standard_B2s",
+                "Standard_D2ds_v4",
+                "Standard_D4ds_v4"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "Azure database for mySQL sku name "
+            }
+        },
+        "dbSkuSizeMB": {
+            "defaultValue": 51200,
+            "allowedValues": [
+                102400,
+                51200
+            ],
+            "type": "Int",
+            "metadata": {
+                "description": "Azure database for mySQL Sku Size "
+            }
+        },
+        "dbSkuTier": {
+            "defaultValue": "Burstable",
+            "allowedValues": [
+                "Burstable",
+                "GeneralPurpose",
+                "MemoryOptimized"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "Azure database for mySQL pricing tier"
+            }
+        },
+        "mysqlVersion": {
+            "defaultValue": "8.0.21",
+            "allowedValues": [
+                "8.0.21"
+            ],
+            "type": "String",
+            "metadata": {
+                "description": "MySQL version"
+            }
+        },
+        "databaseskuFamily": {
+            "defaultValue": "Gen5",
+            "type": "String",
+            "metadata": {
+                "description": "Azure database for mySQL sku family"
+            }
+        }
+    },
+    "variables": {
+        "databaseName": "[concat('database', uniqueString(resourceGroup().id))]",
+        "serverName": "[concat('mysql-',  uniqueString(resourceGroup().id))]",
+        "hostingPlanName": "[concat('hpn-',  uniqueString(resourceGroup().id))]",
+        "publicIpAddressName": "[concat(parameters('vmName'), 'PublicIP' )]",
+        "networkInterfaceName": "[concat(parameters('vmName'),'NetInt')]",
+        "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('subnetName'))]",
+        "osDiskType": "Standard_LRS",
+        "subnetAddressPrefix": "10.1.0.0/24",
+        "addressPrefix": "10.1.0.0/16",
+        "linuxConfiguration": {
+            "disablePasswordAuthentication": true,
+            "ssh": {
+                "publicKeys": [
+                    {
+                        "path": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]",
+                        "keyData": "[parameters('adminPasswordOrKey')]"
+                    }
+                ]
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('networkInterfaceName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups/', parameters('networkSecurityGroupName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
+                "[resourceId('Microsoft.Network/publicIpAddresses/', variables('publicIpAddressName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIpAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpAddressName'))]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-06-01",
+            "name": "[parameters('networkSecurityGroupName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "SSH",
+                        "properties": {
+                            "priority": 1000,
+                            "protocol": "TCP",
+                            "access": "Allow",
+                            "direction": "Inbound",
+                            "sourceAddressPrefix": "*",
+                            "sourcePortRange": "*",
+                            "destinationAddressPrefix": "*",
+                            "destinationPortRange": "22"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-06-01",
+            "name": "[parameters('virtualNetworkName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('addressPrefix')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('subnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnetAddressPrefix')]",
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIpAddresses",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('publicIpAddressName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard",
+                "tier": "Regional"
+            },
+            "properties": {
+                "publicIpAllocationMethod": "Static",
+                "publicIPAddressVersion": "IPv4",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('dnsLabelPrefix')]"
+                },
+                "idleTimeoutInMinutes": 4
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2020-06-01",
+            "name": "[parameters('vmName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('VmSize')]"
+                },
+                "storageProfile": {
+                    "osDisk": {
+                        "createOption": "fromImage",
+                        "managedDisk": {
+                            "storageAccountType": "[variables('osDiskType')]"
+                        }
+                    },
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "[parameters('ubuntuOSVersion')]",
+                        "version": "latest"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[parameters('vmName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPasswordOrKey')]",
+                    "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), json('null'), variables('linuxConfiguration'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Automation/automationAccounts",
+            "apiVersion": "2015-01-01-preview",
+            "name": "[parameters('accountName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [],
+            "tags": {},
+            "properties": {
+                "sku": {
+                    "name": "Basic"
+                }
+            },
+            "resources": [
+                {
+                    "type": "runbooks",
+                    "apiVersion": "2015-01-01-preview",
+                    "name": "[parameters('sampleGraphicalRunbookName')]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Automation/automationAccounts/', parameters('accountName'))]"
+                    ],
+                    "tags": {},
+                    "properties": {
+                        "runbookType": "GraphPowerShell",
+                        "logProgress": "false",
+                        "logVerbose": "false",
+                        "description": "[parameters('sampleGraphicalRunbookDescription')]",
+                        "publishContentLink": {
+                            "uri": "[uri(parameters('_artifactsLocation'), concat('scripts/AzureAutomationTutorial.graphrunbook', parameters('_artifactsLocationSasToken')))]",
+                            "version": "1.0.0.0"
+                        }
+                    }
+                },
+                {
+                    "type": "runbooks",
+                    "apiVersion": "2015-01-01-preview",
+                    "name": "[parameters('samplePowerShellRunbookName')]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Automation/automationAccounts/', parameters('accountName'))]"
+                    ],
+                    "tags": {},
+                    "properties": {
+                        "runbookType": "PowerShell",
+                        "logProgress": "false",
+                        "logVerbose": "false",
+                        "description": "[parameters('samplePowerShellRunbookDescription')]",
+                        "publishContentLink": {
+                            "uri": "[uri(parameters('_artifactsLocation'), concat('scripts/AzureAutomationTutorial.ps1', parameters('_artifactsLocationSasToken')))]",
+                            "version": "1.0.0.0"
+                        }
+                    }
+                },
+                {
+                    "type": "runbooks",
+                    "apiVersion": "2015-01-01-preview",
+                    "name": "[parameters('samplePython2RunbookName')]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Automation/automationAccounts/', parameters('accountName'))]"
+                    ],
+                    "tags": {},
+                    "properties": {
+                        "runbookType": "Python2",
+                        "logProgress": "false",
+                        "logVerbose": "false",
+                        "description": "[parameters('samplePython2RunbookDescription')]",
+                        "publishContentLink": {
+                            "uri": "[uri(parameters('_artifactsLocation'), concat('scripts/AzureAutomationTutorialPython2.py', parameters('_artifactsLocationSasToken')))]",
+                            "version": "1.0.0.0"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2018-11-01",
+            "name": "[parameters('webappname')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Web/serverfarms/', variables('hostingPlanName'))]",
+                "[resourceId('Microsoft.DBforMySQL/flexibleServers', variables('serverName'))]"
+            ],
+            "properties": {
+                "siteConfig": {
+                    "connectionStrings": [
+                        {
+                            "name": "defaultConnection",
+                            "ConnectionString": "[concat('Database=', variables('databaseName'), ';Data Source=', variables('serverName') ,'.mysql.database.azure.com;User Id=',parameters('administratorLogin'),';Password=',parameters('administratorLoginPassword'))]",
+                            "type": "MySQL"
+                        }
+                    ],
+                    "appSettings": [
+                        {
+                            "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+                            "value": "true"
+                        },
+                        {
+                            "name": "GIT_REPO",
+                            "value": "https://github.com/azureappserviceoss/wordpress-azure"
+                        },
+                        {
+                            "name": "GIT_BRANCH",
+                            "value": "linux-appservice"
+                        },
+                        {
+                            "name": "DATABASE_HOST",
+                            "value": "[concat(variables('serverName') ,'.mysql.database.azure.com')]"
+                        },
+                        {
+                            "name": "DATABASE_NAME",
+                            "value": "[variables('databaseName')]"
+                        },
+                        {
+                            "name": "DATABASE_PASSWORD",
+                            "value": "[parameters('administratorLoginPassword')]"
+                        },
+                        {
+                            "name": "DATABASE_USERNAME",
+                            "value": "[parameters('administratorLogin')]"
+                        }
+                    ],
+                    "appCommandLine": "",
+                    "linuxFxVersion": "DOCKER|appsvcorg/wordpress-alpine-php:0.72"
+                },
+                "name": "[parameters('webappname')]",
+                "clientAffinityEnabled": false,
+                "serverFarmId": "[variables('hostingPlanName')]"
+            }
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2016-09-01",
+            "name": "[variables('hostingPlanName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "Tier": "Standard",
+                "Name": "S1"
+            },
+            "kind": "linux",
+            "properties": {
+                "name": "[variables('hostingPlanName')]",
+                "workerSizeId": "[parameters('workerSize')]",
+                "reserved": true,
+                "numberOfWorkers": "1"
+            }
+        },
+        {
+            "type": "Microsoft.DBforMySQL/flexibleServers",
+            "apiVersion": "2023-12-30",
+            "name": "[variables('serverName')]",
+            "location": "[parameters('location')]",
+            "tags": {
+                "AppProfile": "Wordpress"
+            },
+            "sku": {
+                "name": "[parameters('dbSkuName')]",
+                "tier": "[parameters('dbSkuTier')]"
+            },
+            "properties": {
+                "createMode": "Default",
+                "version": "[parameters('mysqlVersion')]",
+                "administratorLogin": "[parameters('administratorLogin')]",
+                "administratorLoginPassword": "[parameters('administratorLoginPassword')]",
+                "storage": {
+                    "storageSizeGB": "[div(parameters('dbSkuSizeMB'), 1024)]"
+                },
+                "backup": {
+                    "backupRetentionDays": 7,
+                    "geoRedundantBackup": "Disabled"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.DBforMySQL/flexibleServers/firewallRules",
+            "apiVersion": "2023-12-30",
+            "name": "[concat(variables('serverName'), '/AllowAll')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.DBforMySQL/flexibleServers', variables('serverName'))]"
+            ],
+            "properties": {
+                "startIpAddress": "0.0.0.0",
+                "endIpAddress": "255.255.255.255"
+            }
+        },
+        {
+            "type": "Microsoft.DBforMySQL/flexibleServers/databases",
+            "apiVersion": "2023-12-30",
+            "name": "[concat(variables('serverName'), '/', variables('databaseName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.DBforMySQL/flexibleServers', variables('serverName'))]"
+            ],
+            "properties": {
+                "charset": "utf8",
+                "collation": "utf8_general_ci"
+            }
+        },
+        {
+            "type": "Microsoft.DBforMySQL/flexibleServers/configurations",
+            "apiVersion": "2023-12-30",
+            "name": "[concat(variables('serverName'), '/require_secure_transport')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.DBforMySQL/flexibleServers', variables('serverName'))]"
+            ],
+            "properties": {
+                "value": "OFF"
+            }
+        }
+    ],
+    "outputs": {
+        "adminUsername": {
+            "type": "String",
+            "value": "[parameters('adminUsername')]"
+        },
+        "adminPassword": {
+            "type": "String",
+            "value": "[parameters('adminPasswordOrKey')]"
+        },
+        "hostname": {
+            "type": "String",
+            "value": "[reference(variables('publicIpAddressName')).dnsSettings.fqdn]"
+        },
+        "sshCommand": {
+            "type": "String",
+            "value": "[concat('ssh ', parameters('adminUsername'), '@', reference(variables('publicIpAddressName')).dnsSettings.fqdn)]"
+        }
+    }
+}
