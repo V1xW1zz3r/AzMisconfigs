@@ -10,7 +10,6 @@ $displayname = "victimadminuser"
 Write-Host -ForegroundColor Green "###########################################################################"
 Write-Host -ForegroundColor Green "# Creating new admin user $user in Azure AD #"
 Write-Host -ForegroundColor Green "###########################################################################"
-# Modern Entra ID requires -AccountEnabled $true to be specified during creation
 New-AzADUser -DisplayName $displayname -UserPrincipalName $user -Password $securepassword -MailNickname $displayname -AccountEnabled $true
 
 ## Assign role in Azure subscription
@@ -57,7 +56,6 @@ $windowsuser = "windowsadmin"
 Write-Host -ForegroundColor Green "########################################"
 Write-Host -ForegroundColor Green "# Creating a new Windows VM $winvmname #"
 Write-Host -ForegroundColor Green "########################################"
-# Restored the original Windows Server 2016 Datacenter OS for lab testing purposes
 az vm create --resource-group $group --name $winvmname --image win2016datacenter --admin-username $windowsuser --admin-password $password --size Standard_D2s_v3
 az vm open-port --port 3389 --resource-group $group --name $winvmname --priority 200
 $winvmpubip = $(az vm show -d -g $group -n $winvmname --query publicIps -o tsv)
